@@ -3,10 +3,17 @@ src = "src"
 out = "out"
 libs = ["lib"]
 allow_internal_expect_revert = true
+dynamic_test_linking = true
+optimizer = true
+optimizer_runs = 999999
+via_ir = true
 
 remappings = [
 	"forge-std/=lib/forge-std/src/",
 	"permit2/=lib/permit2/src/"
 ]
+
+[fuzz]
+runs = 5000
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
