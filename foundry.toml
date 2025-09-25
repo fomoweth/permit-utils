@@ -4,8 +4,10 @@ out = "out"
 libs = ["lib"]
 allow_internal_expect_revert = true
 dynamic_test_linking = true
+fuzz.runs = 5000
 optimizer = true
 optimizer_runs = 999999
+verbosity = 2
 via_ir = true
 
 remappings = [
@@ -13,7 +15,12 @@ remappings = [
 	"permit2/=lib/permit2/src/"
 ]
 
-[fuzz]
-runs = 5000
+[fmt]
+line_length = 120
+tab_width = 4
+func_attrs_with_params_multiline = true
+inline_attribute_style = "compact"
+multiline_func_header = "params_first"
+return_statement = "inline"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

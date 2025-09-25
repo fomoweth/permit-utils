@@ -77,7 +77,9 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitSingle().set(details), expected);
     }
 
-    function test_fuzz_set_permitSingle(IAllowanceTransfer.PermitDetails memory details) public pure {
+    function test_fuzz_set_permitSingle(
+        IAllowanceTransfer.PermitDetails memory details
+    ) public pure {
         IAllowanceTransfer.PermitSingle memory expected =
             IAllowanceTransfer.PermitSingle({details: details, spender: DEFAULT_SPENDER, sigDeadline: DEFAULT_DEADLINE});
 
@@ -224,7 +226,9 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_set_permitBatch(IAllowanceTransfer.PermitDetails[] memory details) public {
+    function test_fuzz_set_permitBatch(
+        IAllowanceTransfer.PermitDetails[] memory details
+    ) public {
         if (details.length == 0) {
             vm.expectRevert(StructBuilder.EmptyArray.selector);
             defaultPermitBatch(details.length).set(details);
@@ -289,9 +293,11 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_set_permitBatch(uint8 length, uint8 index, IAllowanceTransfer.PermitDetails memory details)
-        public
-    {
+    function test_fuzz_set_permitBatch(
+        uint8 length,
+        uint8 index,
+        IAllowanceTransfer.PermitDetails memory details
+    ) public {
         if (index >= length) {
             vm.expectRevert(StructBuilder.IndexOutOfBounds.selector);
             defaultPermitBatch(length).set(index, details);
@@ -332,7 +338,9 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_add_permitBatch(IAllowanceTransfer.PermitDetails memory details) public pure {
+    function test_fuzz_add_permitBatch(
+        IAllowanceTransfer.PermitDetails memory details
+    ) public pure {
         IAllowanceTransfer.PermitBatch memory permit = defaultPermitBatch(0).add(details);
         assertEq(permit.details.length, 1);
         assertEq(permit.details[0], details);
@@ -357,7 +365,9 @@ contract StructBuilderTest is Test {
         assertEq(permit.details[0].nonce, nonce);
     }
 
-    function test_fuzz_add_permitBatch(IAllowanceTransfer.PermitDetails[] memory details) public pure {
+    function test_fuzz_add_permitBatch(
+        IAllowanceTransfer.PermitDetails[] memory details
+    ) public pure {
         vm.assume(details.length != 0);
 
         IAllowanceTransfer.PermitBatch memory permit = defaultPermitBatch(0);
@@ -479,7 +489,9 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitTransfer().set(permitted), expected);
     }
 
-    function test_fuzz_set_transferSingle(ISignatureTransfer.TokenPermissions calldata permitted) public pure {
+    function test_fuzz_set_transferSingle(
+        ISignatureTransfer.TokenPermissions calldata permitted
+    ) public pure {
         ISignatureTransfer.PermitTransferFrom memory expected = ISignatureTransfer.PermitTransferFrom({
             permitted: permitted,
             nonce: DEFAULT_NONCE,
@@ -561,7 +573,9 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitBatchTransfer(length).set(permitted), expected);
     }
 
-    function test_fuzz_set_transferBatch(ISignatureTransfer.TokenPermissions[] memory permitted) public {
+    function test_fuzz_set_transferBatch(
+        ISignatureTransfer.TokenPermissions[] memory permitted
+    ) public {
         if (permitted.length == 0) {
             vm.expectRevert(StructBuilder.EmptyArray.selector);
             defaultPermitBatchTransfer(permitted.length).set(permitted);
@@ -639,19 +653,21 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_add_transferBatch(ISignatureTransfer.TokenPermissions[] memory permitted) public pure {
+    function test_fuzz_add_transferBatch(
+        ISignatureTransfer.TokenPermissions[] memory permitted
+    ) public pure {
         vm.assume(permitted.length != 0);
 
         ISignatureTransfer.PermitBatchTransferFrom memory permit = defaultPermitBatchTransfer(0);
         for (uint256 i; i < permitted.length; ++i) {
             permit = permit.add(permitted[i]);
-            assertEq(permit.permitted[i], permitted[i]);
         }
-        assertEq(permit.permitted.length, permitted.length);
         assertEq(permit.permitted, permitted);
     }
 
-    function test_fuzz_add_transferBatch(ISignatureTransfer.TokenPermissions memory permitted) public pure {
+    function test_fuzz_add_transferBatch(
+        ISignatureTransfer.TokenPermissions memory permitted
+    ) public pure {
         ISignatureTransfer.PermitBatchTransferFrom memory permit = defaultPermitBatchTransfer(0).add(permitted);
         assertEq(permit.permitted.length, 1);
         assertEq(permit.permitted[0], permitted);
@@ -673,10 +689,9 @@ contract StructBuilderTest is Test {
             vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
         }
 
-        ISignatureTransfer.TokenPermissions memory expected =
-            ISignatureTransfer.TokenPermissions({token: token, amount: amount});
-
-        assertEq(StructBuilder.asTokenPermissions(token, amount), expected);
+        ISignatureTransfer.TokenPermissions memory permitted = StructBuilder.asTokenPermissions(token, amount);
+        assertEq(permitted.token, token);
+        assertEq(permitted.amount, amount);
     }
 
     function test_fuzz_asTokenPermissions(address[] memory tokens, uint256[] memory amounts) public {
@@ -692,9 +707,42 @@ contract StructBuilderTest is Test {
         ISignatureTransfer.TokenPermissions[] memory permitted = StructBuilder.asTokenPermissions(tokens, amounts);
 
         if (!shouldRevert) {
-            (address[] memory _tokens, uint256[] memory _amounts) = ArrayHelpers.destructure(permitted);
-            assertEq(tokens, _tokens);
-            assertEq(amounts, _amounts);
+            for (uint256 i; i < permitted.length; ++i) {
+                assertEq(permitted[i].token, tokens[i]);
+                assertEq(permitted[i].amount, amounts[i]);
+            }
+        }
+    }
+
+    function test_fuzz_asSignatureTransferDetails(address recipient, uint256 amount) public {
+        if (recipient == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
+        }
+
+        ISignatureTransfer.SignatureTransferDetails memory transferDetails =
+            StructBuilder.asSignatureTransferDetails(recipient, amount);
+        assertEq(transferDetails.to, recipient);
+        assertEq(transferDetails.requestedAmount, amount);
+    }
+
+    function test_fuzz_asSignatureTransferDetails(address[] memory recipients, uint256[] memory amounts) public {
+        bool shouldRevert;
+        if (shouldRevert = recipients.length == 0) {
+            vm.expectRevert(StructBuilder.EmptyArray.selector);
+        } else if (shouldRevert = recipients.length != amounts.length) {
+            vm.expectRevert(StructBuilder.LengthMismatch.selector);
+        } else if (shouldRevert = _checkZeroAddress(recipients)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
+        }
+
+        ISignatureTransfer.SignatureTransferDetails[] memory transferDetails =
+            StructBuilder.asSignatureTransferDetails(recipients, amounts);
+
+        if (!shouldRevert) {
+            for (uint256 i; i < transferDetails.length; ++i) {
+                assertEq(transferDetails[i].to, recipients[i]);
+                assertEq(transferDetails[i].requestedAmount, amounts[i]);
+            }
         }
     }
 
@@ -702,7 +750,9 @@ contract StructBuilderTest is Test {
         return StructBuilder.init(DEFAULT_SPENDER, DEFAULT_DEADLINE);
     }
 
-    function defaultPermitBatch(uint256 capacity) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
+    function defaultPermitBatch(
+        uint256 capacity
+    ) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
         return StructBuilder.init(DEFAULT_SPENDER, DEFAULT_DEADLINE, capacity);
     }
 
@@ -710,18 +760,16 @@ contract StructBuilderTest is Test {
         return StructBuilder.init(DEFAULT_NONCE, DEFAULT_DEADLINE);
     }
 
-    function defaultPermitBatchTransfer(uint256 capacity)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitBatchTransferFrom memory)
-    {
+    function defaultPermitBatchTransfer(
+        uint256 capacity
+    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory) {
         return StructBuilder.init(DEFAULT_NONCE, DEFAULT_DEADLINE, capacity);
     }
 
-    function assertEq(IAllowanceTransfer.PermitSingle memory x, IAllowanceTransfer.PermitSingle memory y)
-        internal
-        pure
-    {
+    function assertEq(
+        IAllowanceTransfer.PermitSingle memory x,
+        IAllowanceTransfer.PermitSingle memory y
+    ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
@@ -729,24 +777,24 @@ contract StructBuilderTest is Test {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(IAllowanceTransfer.PermitDetails memory x, IAllowanceTransfer.PermitDetails memory y)
-        internal
-        pure
-    {
+    function assertEq(
+        IAllowanceTransfer.PermitDetails memory x,
+        IAllowanceTransfer.PermitDetails memory y
+    ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(IAllowanceTransfer.PermitDetails[] memory x, IAllowanceTransfer.PermitDetails[] memory y)
-        internal
-        pure
-    {
+    function assertEq(
+        IAllowanceTransfer.PermitDetails[] memory x,
+        IAllowanceTransfer.PermitDetails[] memory y
+    ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(ISignatureTransfer.PermitTransferFrom memory x, ISignatureTransfer.PermitTransferFrom memory y)
-        internal
-        pure
-    {
+    function assertEq(
+        ISignatureTransfer.PermitTransferFrom memory x,
+        ISignatureTransfer.PermitTransferFrom memory y
+    ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
@@ -757,35 +805,23 @@ contract StructBuilderTest is Test {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(ISignatureTransfer.TokenPermissions memory x, ISignatureTransfer.TokenPermissions memory y)
-        internal
-        pure
-    {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
-    function assertEq(ISignatureTransfer.TokenPermissions[] memory x, ISignatureTransfer.TokenPermissions[] memory y)
-        internal
-        pure
-    {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
     function assertEq(
-        ISignatureTransfer.SignatureTransferDetails memory x,
-        ISignatureTransfer.SignatureTransferDetails memory y
+        ISignatureTransfer.TokenPermissions memory x,
+        ISignatureTransfer.TokenPermissions memory y
     ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
     function assertEq(
-        ISignatureTransfer.SignatureTransferDetails[] memory x,
-        ISignatureTransfer.SignatureTransferDetails[] memory y
+        ISignatureTransfer.TokenPermissions[] memory x,
+        ISignatureTransfer.TokenPermissions[] memory y
     ) internal pure {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function _checkZeroAddress(address[] memory array) private pure returns (bool) {
+    function _checkZeroAddress(
+        address[] memory array
+    ) private pure returns (bool) {
         for (uint256 i; i < array.length; ++i) {
             if (array[i] == address(0)) return true;
         }
@@ -799,13 +835,17 @@ contract StructBuilderTest is Test {
         return false;
     }
 
-    function _cast(uint160[] memory input) private pure returns (uint256[] memory output) {
+    function _cast(
+        uint160[] memory input
+    ) private pure returns (uint256[] memory output) {
         assembly ("memory-safe") {
             output := input
         }
     }
 
-    function _cast(uint48[] memory input) private pure returns (uint256[] memory output) {
+    function _cast(
+        uint48[] memory input
+    ) private pure returns (uint256[] memory output) {
         assembly ("memory-safe") {
             output := input
         }

@@ -5,7 +5,9 @@ import {IAllowanceTransfer} from "permit2/interfaces/IAllowanceTransfer.sol";
 import {ISignatureTransfer} from "permit2/interfaces/ISignatureTransfer.sol";
 
 library ArrayHelpers {
-    function destructure(IAllowanceTransfer.PermitDetails[] memory array)
+    function destructure(
+        IAllowanceTransfer.PermitDetails[] memory array
+    )
         internal
         pure
         returns (address[] memory tokens, uint160[] memory amounts, uint48[] memory expirations, uint48[] memory nonces)
@@ -24,11 +26,9 @@ library ArrayHelpers {
         }
     }
 
-    function destructure(ISignatureTransfer.TokenPermissions[] memory array)
-        internal
-        pure
-        returns (address[] memory tokens, uint256[] memory amounts)
-    {
+    function destructure(
+        ISignatureTransfer.TokenPermissions[] memory array
+    ) internal pure returns (address[] memory tokens, uint256[] memory amounts) {
         uint256 length = array.length;
         tokens = new address[](length);
         amounts = new uint256[](length);

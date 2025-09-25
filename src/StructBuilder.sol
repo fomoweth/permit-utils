@@ -18,20 +18,18 @@ library StructBuilder {
 
     // PermitSingle
 
-    function init(address spender, uint256 sigDeadline)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitSingle memory permit)
-    {
+    function init(
+        address spender,
+        uint256 sigDeadline
+    ) internal pure returns (IAllowanceTransfer.PermitSingle memory permit) {
         permit.spender = spender;
         permit.sigDeadline = sigDeadline;
     }
 
-    function set(IAllowanceTransfer.PermitSingle memory permit, IAllowanceTransfer.PermitDetails memory params)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitSingle memory)
-    {
+    function set(
+        IAllowanceTransfer.PermitSingle memory permit,
+        IAllowanceTransfer.PermitDetails memory params
+    ) internal pure returns (IAllowanceTransfer.PermitSingle memory) {
         permit.details = params;
         return permit;
     }
@@ -46,11 +44,9 @@ library StructBuilder {
         return set(permit, asPermitDetails(token, amount, expiration, nonce));
     }
 
-    function validate(IAllowanceTransfer.PermitSingle memory permit)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitSingle memory)
-    {
+    function validate(
+        IAllowanceTransfer.PermitSingle memory permit
+    ) internal pure returns (IAllowanceTransfer.PermitSingle memory) {
         if (permit.spender == address(0)) revert MissingRequiredField("spender");
         if (permit.sigDeadline == 0) revert MissingRequiredField("sigDeadline");
         if (permit.details.token == address(0)) revert MissingRequiredField("details");
@@ -59,21 +55,20 @@ library StructBuilder {
 
     // PermitBatch
 
-    function init(address spender, uint256 sigDeadline, uint256 capacity)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitBatch memory permit)
-    {
+    function init(
+        address spender,
+        uint256 sigDeadline,
+        uint256 capacity
+    ) internal pure returns (IAllowanceTransfer.PermitBatch memory permit) {
         permit.details = new IAllowanceTransfer.PermitDetails[](capacity);
         permit.spender = spender;
         permit.sigDeadline = sigDeadline;
     }
 
-    function set(IAllowanceTransfer.PermitBatch memory permit, IAllowanceTransfer.PermitDetails[] memory params)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitBatch memory)
-    {
+    function set(
+        IAllowanceTransfer.PermitBatch memory permit,
+        IAllowanceTransfer.PermitDetails[] memory params
+    ) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
         if (params.length == 0) revert EmptyArray();
         permit.details = params;
         return permit;
@@ -110,11 +105,10 @@ library StructBuilder {
         return set(permit, index, asPermitDetails(token, amount, expiration, nonce));
     }
 
-    function add(IAllowanceTransfer.PermitBatch memory permit, IAllowanceTransfer.PermitDetails memory params)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitBatch memory)
-    {
+    function add(
+        IAllowanceTransfer.PermitBatch memory permit,
+        IAllowanceTransfer.PermitDetails memory params
+    ) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
         IAllowanceTransfer.PermitDetails[] memory details = permit.details;
         assembly ("memory-safe") {
             mstore(details, add(mload(details), 1))
@@ -136,11 +130,9 @@ library StructBuilder {
         return add(permit, asPermitDetails(token, amount, expiration, nonce));
     }
 
-    function validate(IAllowanceTransfer.PermitBatch memory permit)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitBatch memory)
-    {
+    function validate(
+        IAllowanceTransfer.PermitBatch memory permit
+    ) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
         if (permit.spender == address(0)) revert MissingRequiredField("spender");
         if (permit.sigDeadline == 0) revert MissingRequiredField("sigDeadline");
         if (permit.details.length == 0) revert MissingRequiredField("details");
@@ -152,37 +144,33 @@ library StructBuilder {
 
     // PermitTransferFrom
 
-    function init(uint256 nonce, uint256 deadline)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitTransferFrom memory permit)
-    {
+    function init(
+        uint256 nonce,
+        uint256 deadline
+    ) internal pure returns (ISignatureTransfer.PermitTransferFrom memory permit) {
         permit.nonce = nonce;
         permit.deadline = deadline;
     }
 
-    function set(ISignatureTransfer.PermitTransferFrom memory permit, ISignatureTransfer.TokenPermissions memory params)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitTransferFrom memory)
-    {
+    function set(
+        ISignatureTransfer.PermitTransferFrom memory permit,
+        ISignatureTransfer.TokenPermissions memory params
+    ) internal pure returns (ISignatureTransfer.PermitTransferFrom memory) {
         permit.permitted = params;
         return permit;
     }
 
-    function set(ISignatureTransfer.PermitTransferFrom memory permit, address token, uint256 amount)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitTransferFrom memory)
-    {
+    function set(
+        ISignatureTransfer.PermitTransferFrom memory permit,
+        address token,
+        uint256 amount
+    ) internal pure returns (ISignatureTransfer.PermitTransferFrom memory) {
         return set(permit, asTokenPermissions(token, amount));
     }
 
-    function validate(ISignatureTransfer.PermitTransferFrom memory permit)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitTransferFrom memory)
-    {
+    function validate(
+        ISignatureTransfer.PermitTransferFrom memory permit
+    ) internal pure returns (ISignatureTransfer.PermitTransferFrom memory) {
         if (permit.deadline == 0) revert MissingRequiredField("deadline");
         if (permit.permitted.token == address(0)) revert MissingRequiredField("permitted");
         return permit;
@@ -190,11 +178,11 @@ library StructBuilder {
 
     // PermitBatchTransferFrom
 
-    function init(uint256 nonce, uint256 deadline, uint256 capacity)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitBatchTransferFrom memory permit)
-    {
+    function init(
+        uint256 nonce,
+        uint256 deadline,
+        uint256 capacity
+    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory permit) {
         permit.nonce = nonce;
         permit.deadline = deadline;
         permit.permitted = new ISignatureTransfer.TokenPermissions[](capacity);
@@ -227,11 +215,12 @@ library StructBuilder {
         return permit;
     }
 
-    function set(ISignatureTransfer.PermitBatchTransferFrom memory permit, uint256 index, address token, uint256 amount)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitBatchTransferFrom memory)
-    {
+    function set(
+        ISignatureTransfer.PermitBatchTransferFrom memory permit,
+        uint256 index,
+        address token,
+        uint256 amount
+    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory) {
         return set(permit, index, asTokenPermissions(token, amount));
     }
 
@@ -250,19 +239,17 @@ library StructBuilder {
         return permit;
     }
 
-    function add(ISignatureTransfer.PermitBatchTransferFrom memory permit, address token, uint256 amount)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitBatchTransferFrom memory)
-    {
+    function add(
+        ISignatureTransfer.PermitBatchTransferFrom memory permit,
+        address token,
+        uint256 amount
+    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory) {
         return add(permit, asTokenPermissions(token, amount));
     }
 
-    function validate(ISignatureTransfer.PermitBatchTransferFrom memory permit)
-        internal
-        pure
-        returns (ISignatureTransfer.PermitBatchTransferFrom memory)
-    {
+    function validate(
+        ISignatureTransfer.PermitBatchTransferFrom memory permit
+    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory) {
         if (permit.deadline == 0) revert MissingRequiredField("deadline");
         if (permit.permitted.length == 0) revert MissingRequiredField("permitted");
         for (uint256 i; i < permit.permitted.length; ++i) {
@@ -271,11 +258,20 @@ library StructBuilder {
         return permit;
     }
 
-    function asPermitDetails(address token, uint256 amount, uint256 expiration, uint256 nonce)
-        internal
-        pure
-        returns (IAllowanceTransfer.PermitDetails memory)
-    {
+    function asPermitDetails(
+        address token,
+        uint256 amount,
+        uint256 nonce
+    ) internal pure returns (IAllowanceTransfer.PermitDetails memory) {
+        return asPermitDetails(token, amount, 0, nonce);
+    }
+
+    function asPermitDetails(
+        address token,
+        uint256 amount,
+        uint256 expiration,
+        uint256 nonce
+    ) internal pure returns (IAllowanceTransfer.PermitDetails memory) {
         if (token == address(0)) revert InvalidParameter("token");
         if (amount > type(uint160).max) revert InvalidParameter("amount");
         if (expiration > type(uint48).max) revert InvalidParameter("expiration");
@@ -287,6 +283,21 @@ library StructBuilder {
             expiration: uint48(expiration),
             nonce: uint48(nonce)
         });
+    }
+
+    function asPermitDetails(
+        address[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory nonces
+    ) internal pure returns (IAllowanceTransfer.PermitDetails[] memory details) {
+        uint256 n = tokens.length;
+        if (n == 0) revert EmptyArray();
+        if (n != amounts.length || n != nonces.length) revert LengthMismatch();
+
+        details = new IAllowanceTransfer.PermitDetails[](n);
+        for (uint256 i; i < n; ++i) {
+            details[i] = asPermitDetails(tokens[i], amounts[i], nonces[i]);
+        }
     }
 
     function asPermitDetails(
@@ -305,20 +316,18 @@ library StructBuilder {
         }
     }
 
-    function asTokenPermissions(address token, uint256 amount)
-        internal
-        pure
-        returns (ISignatureTransfer.TokenPermissions memory)
-    {
+    function asTokenPermissions(
+        address token,
+        uint256 amount
+    ) internal pure returns (ISignatureTransfer.TokenPermissions memory) {
         if (token == address(0)) revert InvalidParameter("token");
         return ISignatureTransfer.TokenPermissions({token: token, amount: amount});
     }
 
-    function asTokenPermissions(address[] memory tokens, uint256[] memory amounts)
-        internal
-        pure
-        returns (ISignatureTransfer.TokenPermissions[] memory permitted)
-    {
+    function asTokenPermissions(
+        address[] memory tokens,
+        uint256[] memory amounts
+    ) internal pure returns (ISignatureTransfer.TokenPermissions[] memory permitted) {
         uint256 n = tokens.length;
         if (n == 0) revert EmptyArray();
         if (n != amounts.length) revert LengthMismatch();
@@ -326,6 +335,28 @@ library StructBuilder {
         permitted = new ISignatureTransfer.TokenPermissions[](n);
         for (uint256 i; i < n; ++i) {
             permitted[i] = asTokenPermissions(tokens[i], amounts[i]);
+        }
+    }
+
+    function asSignatureTransferDetails(
+        address recipient,
+        uint256 amount
+    ) internal pure returns (ISignatureTransfer.SignatureTransferDetails memory) {
+        if (recipient == address(0)) revert InvalidParameter("recipient");
+        return ISignatureTransfer.SignatureTransferDetails({to: recipient, requestedAmount: amount});
+    }
+
+    function asSignatureTransferDetails(
+        address[] memory recipients,
+        uint256[] memory amounts
+    ) internal pure returns (ISignatureTransfer.SignatureTransferDetails[] memory transferDetails) {
+        uint256 n = recipients.length;
+        if (n == 0) revert EmptyArray();
+        if (n != amounts.length) revert LengthMismatch();
+
+        transferDetails = new ISignatureTransfer.SignatureTransferDetails[](n);
+        for (uint256 i; i < n; ++i) {
+            transferDetails[i] = asSignatureTransferDetails(recipients[i], amounts[i]);
         }
     }
 }
