@@ -15,47 +15,47 @@ library PermitSignatures {
 
     bytes32 internal constant DAI_DOMAIN_SEPARATOR = 0xdbb8cf42e1ecb028be3f3dbc922e1d878b963f411dc388ced501601c60f7c6f7;
 
-    function sign(
-        uint256 privateKey,
-        bytes32 domainSeparator,
-        EIP2612Permit memory permit
-    ) internal pure returns (bytes memory signature) {
+    function sign(uint256 privateKey, bytes32 domainSeparator, EIP2612Permit memory permit)
+        internal
+        pure
+        returns (bytes memory signature)
+    {
         bytes32 structHash = permit.hash(domainSeparator != DAI_DOMAIN_SEPARATOR);
         return _sign(privateKey, domainSeparator.hashTypedData(structHash));
     }
 
-    function sign(
-        uint256 privateKey,
-        bytes32 domainSeparator,
-        IAllowanceTransfer.PermitSingle memory permit
-    ) internal pure returns (bytes memory signature) {
+    function sign(uint256 privateKey, bytes32 domainSeparator, IAllowanceTransfer.PermitSingle memory permit)
+        internal
+        pure
+        returns (bytes memory signature)
+    {
         bytes32 structHash = permit.hash();
         return _sign(privateKey, domainSeparator.hashTypedData(structHash));
     }
 
-    function signCompact(
-        uint256 privateKey,
-        bytes32 domainSeparator,
-        IAllowanceTransfer.PermitSingle memory permit
-    ) internal pure returns (bytes memory signature) {
+    function signCompact(uint256 privateKey, bytes32 domainSeparator, IAllowanceTransfer.PermitSingle memory permit)
+        internal
+        pure
+        returns (bytes memory signature)
+    {
         bytes32 structHash = permit.hash();
         return _signCompact(privateKey, domainSeparator.hashTypedData(structHash));
     }
 
-    function sign(
-        uint256 privateKey,
-        bytes32 domainSeparator,
-        IAllowanceTransfer.PermitBatch memory permit
-    ) internal pure returns (bytes memory signature) {
+    function sign(uint256 privateKey, bytes32 domainSeparator, IAllowanceTransfer.PermitBatch memory permit)
+        internal
+        pure
+        returns (bytes memory signature)
+    {
         bytes32 structHash = permit.hash();
         return _sign(privateKey, domainSeparator.hashTypedData(structHash));
     }
 
-    function signCompact(
-        uint256 privateKey,
-        bytes32 domainSeparator,
-        IAllowanceTransfer.PermitBatch memory permit
-    ) internal pure returns (bytes memory signature) {
+    function signCompact(uint256 privateKey, bytes32 domainSeparator, IAllowanceTransfer.PermitBatch memory permit)
+        internal
+        pure
+        returns (bytes memory signature)
+    {
         bytes32 structHash = permit.hash();
         return _signCompact(privateKey, domainSeparator.hashTypedData(structHash));
     }
@@ -148,9 +148,7 @@ library PermitSignatures {
         return _signCompact(privateKey, domainSeparator.hashTypedData(structHash));
     }
 
-    function parse(
-        bytes memory signature
-    ) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
+    function parse(bytes memory signature) internal pure returns (uint8 v, bytes32 r, bytes32 s) {
         assembly ("memory-safe") {
             switch mload(signature)
             case 65 {
@@ -171,9 +169,7 @@ library PermitSignatures {
         }
     }
 
-    function parseCompact(
-        bytes memory signature
-    ) internal pure returns (bytes32 r, bytes32 vs) {
+    function parseCompact(bytes memory signature) internal pure returns (bytes32 r, bytes32 vs) {
         assembly ("memory-safe") {
             switch mload(signature)
             case 65 {

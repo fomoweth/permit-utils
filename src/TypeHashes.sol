@@ -45,27 +45,19 @@ library TypeHashes {
     string internal constant PERMIT_BATCH_WITNESS_TRANSFER_FROM_TYPESTRING =
         "PermitBatchWitnessTransferFrom(TokenPermissions[] permitted,address spender,uint256 nonce,uint256 deadline,";
 
-    function PERMIT_WITNESS_TRANSFER_FROM_TYPEHASH(
-        string memory desc
-    ) internal pure returns (bytes32) {
+    function PERMIT_WITNESS_TRANSFER_FROM_TYPEHASH(string memory desc) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PERMIT_WITNESS_TRANSFER_FROM_TYPESTRING, WITNESS_TYPESTRING(desc)));
     }
 
-    function PERMIT_BATCH_WITNESS_TRANSFER_FROM_TYPEHASH(
-        string memory desc
-    ) internal pure returns (bytes32) {
+    function PERMIT_BATCH_WITNESS_TRANSFER_FROM_TYPEHASH(string memory desc) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(PERMIT_BATCH_WITNESS_TRANSFER_FROM_TYPESTRING, WITNESS_TYPESTRING(desc)));
     }
 
-    function WITNESS_TYPESTRING(
-        string memory desc
-    ) internal pure returns (string memory) {
+    function WITNESS_TYPESTRING(string memory desc) internal pure returns (string memory) {
         return string.concat(_slice(desc, 0, _indexOf(desc, "(")), " witness)", desc, TOKEN_PERMISSIONS_TYPESTRING);
     }
 
-    function hash(
-        EIP2612Permit memory permit
-    ) internal pure returns (bytes32) {
+    function hash(EIP2612Permit memory permit) internal pure returns (bytes32) {
         return hash(permit, true);
     }
 
@@ -81,26 +73,23 @@ library TypeHashes {
         );
     }
 
-    function hash(
-        IAllowanceTransfer.PermitSingle memory permit
-    ) internal pure returns (bytes32) {
+    function hash(IAllowanceTransfer.PermitSingle memory permit) internal pure returns (bytes32) {
         return keccak256(
             abi.encode(PERMIT_SINGLE_TYPEHASH, _hashPermitDetails(permit.details), permit.spender, permit.sigDeadline)
         );
     }
 
-    function hash(
-        IAllowanceTransfer.PermitBatch memory permit
-    ) internal pure returns (bytes32) {
+    function hash(IAllowanceTransfer.PermitBatch memory permit) internal pure returns (bytes32) {
         return keccak256(
             abi.encode(PERMIT_BATCH_TYPEHASH, _hashPermitDetails(permit.details), permit.spender, permit.sigDeadline)
         );
     }
 
-    function hash(
-        ISignatureTransfer.PermitTransferFrom memory permit,
-        address spender
-    ) internal pure returns (bytes32) {
+    function hash(ISignatureTransfer.PermitTransferFrom memory permit, address spender)
+        internal
+        pure
+        returns (bytes32)
+    {
         return keccak256(
             abi.encode(
                 PERMIT_TRANSFER_FROM_TYPEHASH,
@@ -112,10 +101,11 @@ library TypeHashes {
         );
     }
 
-    function hash(
-        ISignatureTransfer.PermitBatchTransferFrom memory permit,
-        address spender
-    ) internal pure returns (bytes32) {
+    function hash(ISignatureTransfer.PermitBatchTransferFrom memory permit, address spender)
+        internal
+        pure
+        returns (bytes32)
+    {
         return keccak256(
             abi.encode(
                 PERMIT_BATCH_TRANSFER_FROM_TYPEHASH,
@@ -191,15 +181,11 @@ library TypeHashes {
         }
     }
 
-    function _hashPermitDetails(
-        IAllowanceTransfer.PermitDetails memory details
-    ) private pure returns (bytes32) {
+    function _hashPermitDetails(IAllowanceTransfer.PermitDetails memory details) private pure returns (bytes32) {
         return keccak256(abi.encode(PERMIT_DETAILS_TYPEHASH, details));
     }
 
-    function _hashPermitDetails(
-        IAllowanceTransfer.PermitDetails[] memory details
-    ) private pure returns (bytes32) {
+    function _hashPermitDetails(IAllowanceTransfer.PermitDetails[] memory details) private pure returns (bytes32) {
         bytes memory hashes;
         for (uint256 i; i < details.length; ++i) {
             hashes = bytes.concat(hashes, _hashPermitDetails(details[i]));
@@ -207,15 +193,19 @@ library TypeHashes {
         return keccak256(hashes);
     }
 
-    function _hashTokenPermissions(
-        ISignatureTransfer.TokenPermissions memory permitted
-    ) private pure returns (bytes32) {
+    function _hashTokenPermissions(ISignatureTransfer.TokenPermissions memory permitted)
+        private
+        pure
+        returns (bytes32)
+    {
         return keccak256(abi.encode(TOKEN_PERMISSIONS_TYPEHASH, permitted));
     }
 
-    function _hashTokenPermissions(
-        ISignatureTransfer.TokenPermissions[] memory permitted
-    ) private pure returns (bytes32) {
+    function _hashTokenPermissions(ISignatureTransfer.TokenPermissions[] memory permitted)
+        private
+        pure
+        returns (bytes32)
+    {
         bytes memory hashes;
         for (uint256 i; i < permitted.length; ++i) {
             hashes = bytes.concat(hashes, _hashTokenPermissions(permitted[i]));

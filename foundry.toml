@@ -20,7 +20,6 @@ line_length = 120
 tab_width = 4
 func_attrs_with_params_multiline = true
 inline_attribute_style = "compact"
-multiline_func_header = "params_first"
 return_statement = "inline"
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

@@ -77,9 +77,7 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitSingle().set(details), expected);
     }
 
-    function test_fuzz_set_permitSingle(
-        IAllowanceTransfer.PermitDetails memory details
-    ) public pure {
+    function test_fuzz_set_permitSingle(IAllowanceTransfer.PermitDetails memory details) public pure {
         IAllowanceTransfer.PermitSingle memory expected =
             IAllowanceTransfer.PermitSingle({details: details, spender: DEFAULT_SPENDER, sigDeadline: DEFAULT_DEADLINE});
 
@@ -226,9 +224,7 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_set_permitBatch(
-        IAllowanceTransfer.PermitDetails[] memory details
-    ) public {
+    function test_fuzz_set_permitBatch(IAllowanceTransfer.PermitDetails[] memory details) public {
         if (details.length == 0) {
             vm.expectRevert(StructBuilder.EmptyArray.selector);
             defaultPermitBatch(details.length).set(details);
@@ -293,16 +289,18 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_set_permitBatch(
-        uint8 length,
-        uint8 index,
-        IAllowanceTransfer.PermitDetails memory details
-    ) public {
+    function test_fuzz_set_permitBatch(uint8 length, uint8 index, IAllowanceTransfer.PermitDetails memory details)
+        public
+    {
         if (index >= length) {
             vm.expectRevert(StructBuilder.IndexOutOfBounds.selector);
             defaultPermitBatch(length).set(index, details);
         } else {
-            assertEq(defaultPermitBatch(length).set(index, details).details[index], details);
+            IAllowanceTransfer.PermitBatch memory permit = defaultPermitBatch(length).set(index, details);
+            assertEq(permit.details[index].token, details.token);
+            assertEq(permit.details[index].amount, details.amount);
+            assertEq(permit.details[index].expiration, details.expiration);
+            assertEq(permit.details[index].nonce, details.nonce);
         }
     }
 
@@ -338,12 +336,13 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_add_permitBatch(
-        IAllowanceTransfer.PermitDetails memory details
-    ) public pure {
+    function test_fuzz_add_permitBatch(IAllowanceTransfer.PermitDetails memory details) public pure {
         IAllowanceTransfer.PermitBatch memory permit = defaultPermitBatch(0).add(details);
         assertEq(permit.details.length, 1);
-        assertEq(permit.details[0], details);
+        assertEq(permit.details[0].token, details.token);
+        assertEq(permit.details[0].amount, details.amount);
+        assertEq(permit.details[0].expiration, details.expiration);
+        assertEq(permit.details[0].nonce, details.nonce);
     }
 
     function test_fuzz_add_permitBatch(address token, uint256 amount, uint256 expiration, uint256 nonce) public {
@@ -365,77 +364,19 @@ contract StructBuilderTest is Test {
         assertEq(permit.details[0].nonce, nonce);
     }
 
-    function test_fuzz_add_permitBatch(
-        IAllowanceTransfer.PermitDetails[] memory details
-    ) public pure {
+    function test_fuzz_add_permitBatch(IAllowanceTransfer.PermitDetails[] memory details) public pure {
         vm.assume(details.length != 0);
 
         IAllowanceTransfer.PermitBatch memory permit = defaultPermitBatch(0);
         for (uint256 i; i < details.length; ++i) {
             permit = permit.add(details[i]);
-            assertEq(permit.details[i], details[i]);
-        }
-        assertEq(permit.details.length, details.length);
-        assertEq(permit.details, details);
-    }
-
-    function test_fuzz_asPermitDetails(address token, uint256 amount, uint256 expiration, uint256 nonce) public {
-        if (token == address(0)) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
-        } else if (amount > type(uint160).max) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
-        } else if (expiration > type(uint48).max) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "expiration"));
-        } else if (nonce > type(uint48).max) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "nonce"));
         }
 
-        IAllowanceTransfer.PermitDetails memory expected = IAllowanceTransfer.PermitDetails({
-            token: token,
-            amount: uint160(amount),
-            expiration: uint48(expiration),
-            nonce: uint48(nonce)
-        });
-
-        assertEq(StructBuilder.asPermitDetails(token, amount, expiration, nonce), expected);
-    }
-
-    function test_fuzz_asPermitDetails(
-        address[] memory tokens,
-        uint256[] memory amounts,
-        uint256[] memory expirations,
-        uint256[] memory nonces
-    ) public {
-        bool shouldRevert;
-        if (shouldRevert = tokens.length == 0) {
-            vm.expectRevert(StructBuilder.EmptyArray.selector);
-        } else if (
-            shouldRevert = (
-                tokens.length != amounts.length || tokens.length != expirations.length || tokens.length != nonces.length
-            )
-        ) {
-            vm.expectRevert(StructBuilder.LengthMismatch.selector);
-        } else if (shouldRevert = _checkZeroAddress(tokens)) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
-        } else if (shouldRevert = _checkOverflows(amounts, type(uint160).max)) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
-        } else if (shouldRevert = _checkOverflows(expirations, type(uint48).max)) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "expiration"));
-        } else if (shouldRevert = _checkOverflows(nonces, type(uint48).max)) {
-            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "nonce"));
-        }
-
-        IAllowanceTransfer.PermitDetails[] memory details =
-            StructBuilder.asPermitDetails(tokens, amounts, expirations, nonces);
-
-        if (!shouldRevert) {
-            (address[] memory _tokens, uint160[] memory _amounts, uint48[] memory _expirations, uint48[] memory _nonces)
-            = ArrayHelpers.destructure(details);
-
-            assertEq(tokens, _tokens);
-            assertEq(amounts, _cast(_amounts));
-            assertEq(expirations, _cast(_expirations));
-            assertEq(nonces, _cast(_nonces));
+        for (uint256 i; i < details.length; ++i) {
+            assertEq(permit.details[i].token, details[i].token);
+            assertEq(permit.details[i].amount, details[i].amount);
+            assertEq(permit.details[i].expiration, details[i].expiration);
+            assertEq(permit.details[i].nonce, details[i].nonce);
         }
     }
 
@@ -489,9 +430,7 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitTransfer().set(permitted), expected);
     }
 
-    function test_fuzz_set_transferSingle(
-        ISignatureTransfer.TokenPermissions calldata permitted
-    ) public pure {
+    function test_fuzz_set_transferSingle(ISignatureTransfer.TokenPermissions calldata permitted) public pure {
         ISignatureTransfer.PermitTransferFrom memory expected = ISignatureTransfer.PermitTransferFrom({
             permitted: permitted,
             nonce: DEFAULT_NONCE,
@@ -573,9 +512,7 @@ contract StructBuilderTest is Test {
         assertEq(defaultPermitBatchTransfer(length).set(permitted), expected);
     }
 
-    function test_fuzz_set_transferBatch(
-        ISignatureTransfer.TokenPermissions[] memory permitted
-    ) public {
+    function test_fuzz_set_transferBatch(ISignatureTransfer.TokenPermissions[] memory permitted) public {
         if (permitted.length == 0) {
             vm.expectRevert(StructBuilder.EmptyArray.selector);
             defaultPermitBatchTransfer(permitted.length).set(permitted);
@@ -632,7 +569,11 @@ contract StructBuilderTest is Test {
             vm.expectRevert(StructBuilder.IndexOutOfBounds.selector);
             defaultPermitBatchTransfer(length).set(index, permitted);
         } else {
-            assertEq(defaultPermitBatchTransfer(length).set(index, permitted).permitted[index], permitted);
+            ISignatureTransfer.PermitBatchTransferFrom memory permit =
+                defaultPermitBatchTransfer(length).set(index, permitted);
+
+            assertEq(permit.permitted[index].token, permitted.token);
+            assertEq(permit.permitted[index].amount, permitted.amount);
         }
     }
 
@@ -653,24 +594,25 @@ contract StructBuilderTest is Test {
         }
     }
 
-    function test_fuzz_add_transferBatch(
-        ISignatureTransfer.TokenPermissions[] memory permitted
-    ) public pure {
+    function test_fuzz_add_transferBatch(ISignatureTransfer.TokenPermissions[] memory permitted) public pure {
         vm.assume(permitted.length != 0);
 
         ISignatureTransfer.PermitBatchTransferFrom memory permit = defaultPermitBatchTransfer(0);
         for (uint256 i; i < permitted.length; ++i) {
             permit = permit.add(permitted[i]);
         }
-        assertEq(permit.permitted, permitted);
+
+        for (uint256 i; i < permitted.length; ++i) {
+            assertEq(permit.permitted[i].token, permitted[i].token);
+            assertEq(permit.permitted[i].amount, permitted[i].amount);
+        }
     }
 
-    function test_fuzz_add_transferBatch(
-        ISignatureTransfer.TokenPermissions memory permitted
-    ) public pure {
+    function test_fuzz_add_transferBatch(ISignatureTransfer.TokenPermissions memory permitted) public pure {
         ISignatureTransfer.PermitBatchTransferFrom memory permit = defaultPermitBatchTransfer(0).add(permitted);
         assertEq(permit.permitted.length, 1);
-        assertEq(permit.permitted[0], permitted);
+        assertEq(permit.permitted[0].token, permitted.token);
+        assertEq(permit.permitted[0].amount, permitted.amount);
     }
 
     function test_fuzz_add_transferBatch(address token, uint256 amount) public {
@@ -682,6 +624,65 @@ contract StructBuilderTest is Test {
         assertEq(permit.permitted.length, 1);
         assertEq(permit.permitted[0].token, token);
         assertEq(permit.permitted[0].amount, amount);
+    }
+
+    function test_fuzz_asPermitDetails(address token, uint256 amount, uint256 expiration, uint256 nonce) public {
+        bool shouldRevert;
+        if (shouldRevert = token == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
+        } else if (shouldRevert = amount > type(uint160).max) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
+        } else if (shouldRevert = expiration > type(uint48).max) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "expiration"));
+        } else if (shouldRevert = nonce > type(uint48).max) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "nonce"));
+        }
+
+        IAllowanceTransfer.PermitDetails memory details =
+            StructBuilder.asPermitDetails(token, amount, expiration, nonce);
+
+        if (!shouldRevert) {
+            assertEq(details.token, token);
+            assertEq(details.amount, amount);
+            assertEq(details.expiration, expiration);
+            assertEq(details.nonce, nonce);
+        }
+    }
+
+    function test_fuzz_asPermitDetails(
+        address[] memory tokens,
+        uint256[] memory amounts,
+        uint256[] memory expirations,
+        uint256[] memory nonces
+    ) public {
+        uint256 length = tokens.length;
+        bool shouldRevert;
+        if (shouldRevert = length == 0) {
+            vm.expectRevert(StructBuilder.EmptyArray.selector);
+        } else if (shouldRevert = (length != amounts.length || length != expirations.length || length != nonces.length))
+        {
+            vm.expectRevert(StructBuilder.LengthMismatch.selector);
+        } else if (shouldRevert = _checkZeroAddress(tokens)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
+        } else if (shouldRevert = _checkOverflows(amounts, type(uint160).max)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
+        } else if (shouldRevert = _checkOverflows(expirations, type(uint48).max)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "expiration"));
+        } else if (shouldRevert = _checkOverflows(nonces, type(uint48).max)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "nonce"));
+        }
+
+        IAllowanceTransfer.PermitDetails[] memory details =
+            StructBuilder.asPermitDetails(tokens, amounts, expirations, nonces);
+
+        if (!shouldRevert) {
+            for (uint256 i; i < details.length; ++i) {
+                assertEq(details[i].token, tokens[i]);
+                assertEq(details[i].amount, amounts[i]);
+                assertEq(details[i].expiration, expirations[i]);
+                assertEq(details[i].nonce, nonces[i]);
+            }
+        }
     }
 
     function test_fuzz_asTokenPermissions(address token, uint256 amount) public {
@@ -714,15 +715,107 @@ contract StructBuilderTest is Test {
         }
     }
 
+    function test_fuzz_asAllowanceTransferDetails(address token, uint256 amount, address sender, address recipient)
+        public
+    {
+        if (token == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
+        } else if (sender == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "sender"));
+        } else if (recipient == address(0)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
+        } else if (amount > type(uint160).max) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
+        }
+
+        IAllowanceTransfer.AllowanceTransferDetails memory details =
+            StructBuilder.asAllowanceTransferDetails(token, amount, sender, recipient);
+
+        assertEq(details.token, token);
+        assertEq(details.amount, amount);
+        assertEq(details.from, sender);
+        assertEq(details.to, recipient);
+    }
+
+    function test_fuzz_asAllowanceTransferDetails(
+        address[] memory tokens,
+        uint256[] memory amounts,
+        address sender,
+        address recipient
+    ) public {
+        bool shouldRevert;
+        if (shouldRevert = tokens.length == 0) {
+            vm.expectRevert(StructBuilder.EmptyArray.selector);
+        } else if (shouldRevert = tokens.length != amounts.length) {
+            vm.expectRevert(StructBuilder.LengthMismatch.selector);
+        } else if (shouldRevert = _checkZeroAddress(tokens)) {
+            vm.expectRevert();
+        } else if (shouldRevert = (sender == address(0))) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "sender"));
+        } else if (shouldRevert = (recipient == address(0))) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
+        } else if (shouldRevert = _checkOverflows(amounts, type(uint160).max)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
+        }
+
+        IAllowanceTransfer.AllowanceTransferDetails[] memory details =
+            StructBuilder.asAllowanceTransferDetails(tokens, amounts, sender, recipient);
+
+        if (!shouldRevert) {
+            for (uint256 i; i < details.length; ++i) {
+                assertEq(details[i].token, tokens[i]);
+                assertEq(details[i].amount, amounts[i]);
+                assertEq(details[i].from, sender);
+                assertEq(details[i].to, recipient);
+            }
+        }
+    }
+
+    function test_fuzz_asAllowanceTransferDetails(
+        address[] memory tokens,
+        uint256[] memory amounts,
+        address[] memory senders,
+        address[] memory recipients
+    ) public {
+        uint256 length = tokens.length;
+        bool shouldRevert;
+        if (shouldRevert = length == 0) {
+            vm.expectRevert(StructBuilder.EmptyArray.selector);
+        } else if (shouldRevert = (length != amounts.length || length != senders.length || length != recipients.length))
+        {
+            vm.expectRevert(StructBuilder.LengthMismatch.selector);
+        } else if (shouldRevert = _checkZeroAddress(tokens)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "token"));
+        } else if (shouldRevert = _checkZeroAddress(senders)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "sender"));
+        } else if (shouldRevert = _checkZeroAddress(recipients)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
+        } else if (shouldRevert = _checkOverflows(amounts, type(uint160).max)) {
+            vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "amount"));
+        }
+
+        IAllowanceTransfer.AllowanceTransferDetails[] memory details =
+            StructBuilder.asAllowanceTransferDetails(tokens, amounts, senders, recipients);
+
+        if (!shouldRevert) {
+            for (uint256 i; i < details.length; ++i) {
+                assertEq(details[i].token, tokens[i]);
+                assertEq(details[i].amount, amounts[i]);
+                assertEq(details[i].from, senders[i]);
+                assertEq(details[i].to, recipients[i]);
+            }
+        }
+    }
+
     function test_fuzz_asSignatureTransferDetails(address recipient, uint256 amount) public {
         if (recipient == address(0)) {
             vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
         }
 
-        ISignatureTransfer.SignatureTransferDetails memory transferDetails =
+        ISignatureTransfer.SignatureTransferDetails memory details =
             StructBuilder.asSignatureTransferDetails(recipient, amount);
-        assertEq(transferDetails.to, recipient);
-        assertEq(transferDetails.requestedAmount, amount);
+        assertEq(details.to, recipient);
+        assertEq(details.requestedAmount, amount);
     }
 
     function test_fuzz_asSignatureTransferDetails(address[] memory recipients, uint256[] memory amounts) public {
@@ -735,13 +828,13 @@ contract StructBuilderTest is Test {
             vm.expectRevert(abi.encodeWithSelector(StructBuilder.InvalidParameter.selector, "recipient"));
         }
 
-        ISignatureTransfer.SignatureTransferDetails[] memory transferDetails =
+        ISignatureTransfer.SignatureTransferDetails[] memory details =
             StructBuilder.asSignatureTransferDetails(recipients, amounts);
 
         if (!shouldRevert) {
-            for (uint256 i; i < transferDetails.length; ++i) {
-                assertEq(transferDetails[i].to, recipients[i]);
-                assertEq(transferDetails[i].requestedAmount, amounts[i]);
+            for (uint256 i; i < details.length; ++i) {
+                assertEq(details[i].to, recipients[i]);
+                assertEq(details[i].requestedAmount, amounts[i]);
             }
         }
     }
@@ -750,9 +843,7 @@ contract StructBuilderTest is Test {
         return StructBuilder.init(DEFAULT_SPENDER, DEFAULT_DEADLINE);
     }
 
-    function defaultPermitBatch(
-        uint256 capacity
-    ) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
+    function defaultPermitBatch(uint256 capacity) internal pure returns (IAllowanceTransfer.PermitBatch memory) {
         return StructBuilder.init(DEFAULT_SPENDER, DEFAULT_DEADLINE, capacity);
     }
 
@@ -760,16 +851,18 @@ contract StructBuilderTest is Test {
         return StructBuilder.init(DEFAULT_NONCE, DEFAULT_DEADLINE);
     }
 
-    function defaultPermitBatchTransfer(
-        uint256 capacity
-    ) internal pure returns (ISignatureTransfer.PermitBatchTransferFrom memory) {
+    function defaultPermitBatchTransfer(uint256 capacity)
+        internal
+        pure
+        returns (ISignatureTransfer.PermitBatchTransferFrom memory)
+    {
         return StructBuilder.init(DEFAULT_NONCE, DEFAULT_DEADLINE, capacity);
     }
 
-    function assertEq(
-        IAllowanceTransfer.PermitSingle memory x,
-        IAllowanceTransfer.PermitSingle memory y
-    ) internal pure {
+    function assertEq(IAllowanceTransfer.PermitSingle memory x, IAllowanceTransfer.PermitSingle memory y)
+        internal
+        pure
+    {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
@@ -777,24 +870,10 @@ contract StructBuilderTest is Test {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(
-        IAllowanceTransfer.PermitDetails memory x,
-        IAllowanceTransfer.PermitDetails memory y
-    ) internal pure {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
-    function assertEq(
-        IAllowanceTransfer.PermitDetails[] memory x,
-        IAllowanceTransfer.PermitDetails[] memory y
-    ) internal pure {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
-    function assertEq(
-        ISignatureTransfer.PermitTransferFrom memory x,
-        ISignatureTransfer.PermitTransferFrom memory y
-    ) internal pure {
+    function assertEq(ISignatureTransfer.PermitTransferFrom memory x, ISignatureTransfer.PermitTransferFrom memory y)
+        internal
+        pure
+    {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
@@ -805,23 +884,7 @@ contract StructBuilderTest is Test {
         assertEq(abi.encode(x), abi.encode(y));
     }
 
-    function assertEq(
-        ISignatureTransfer.TokenPermissions memory x,
-        ISignatureTransfer.TokenPermissions memory y
-    ) internal pure {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
-    function assertEq(
-        ISignatureTransfer.TokenPermissions[] memory x,
-        ISignatureTransfer.TokenPermissions[] memory y
-    ) internal pure {
-        assertEq(abi.encode(x), abi.encode(y));
-    }
-
-    function _checkZeroAddress(
-        address[] memory array
-    ) private pure returns (bool) {
+    function _checkZeroAddress(address[] memory array) private pure returns (bool) {
         for (uint256 i; i < array.length; ++i) {
             if (array[i] == address(0)) return true;
         }
@@ -835,17 +898,13 @@ contract StructBuilderTest is Test {
         return false;
     }
 
-    function _cast(
-        uint160[] memory input
-    ) private pure returns (uint256[] memory output) {
+    function _cast(uint160[] memory input) private pure returns (uint256[] memory output) {
         assembly ("memory-safe") {
             output := input
         }
     }
 
-    function _cast(
-        uint48[] memory input
-    ) private pure returns (uint256[] memory output) {
+    function _cast(uint48[] memory input) private pure returns (uint256[] memory output) {
         assembly ("memory-safe") {
             output := input
         }
